@@ -12,8 +12,6 @@ npx.cmd http-server . -p 7777 -a 0.0.0.0
 
 Then visit <http://localhost:7777> on the same machine, or <http://10.21.26.181:7777> from another device on the same network.
 
-Port `6666` is blocked by many browsers as an unsafe port. Port `7777` is suitable unless another local service or firewall rule already uses it.
-
 ## Publish to GitHub
 
 Create an empty repository on GitHub, then run:

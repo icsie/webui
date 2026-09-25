@@ -1,0 +1,59 @@
+{
+  "title": "個人總覽",
+  "cards": [
+    {
+      "id": "tasks",
+      "label": "待辦事項",
+      "value": "6",
+      "unit": "件待處理",
+      "description": "其中 2 件即將到期",
+      "accent": "orange",
+      "link": "/teacher/tasks"
+    },
+    {
+      "id": "courses",
+      "label": "本學期授課",
+      "value": "4",
+      "unit": "門課程",
+      "description": "本週有 8 堂課",
+      "accent": "blue",
+      "link": "/teacher/teaching/in-semester"
+    },
+    {
+      "id": "calendar",
+      "label": "近期行事曆",
+      "value": "09/25",
+      "unit": "教務會議",
+      "description": "行政大樓 302 會議室",
+      "accent": "green",
+      "link": "/teacher/academic-calendar"
+    },
+    {
+      "id": "notifications",
+      "label": "未讀通知",
+      "value": "3",
+      "unit": "則通知",
+      "description": "最新通知於今天 09:20 發布",
+      "accent": "purple",
+      "link": "/teacher/notifications"
+    },
+    {
+      "id": "announcement",
+      "label": "教務公告",
+      "value": "選課作業提醒",
+      "unit": "重要公告",
+      "description": "請於 09/30 前完成確認",
+      "accent": "red",
+      "link": "/teacher/academic-announcements"
+    },
+    {
+      "id": "profile",
+      "label": "個人資料",
+      "value": "已完成",
+      "unit": "資料完整度 100%",
+      "description": "上次更新：2025/08/28",
+      "accent": "teal",
+      "link": "/teacher/profile"
+    }
+  ]
+}

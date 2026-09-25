@@ -1,0 +1,62 @@
+{
+  "role": "teacher",
+  "label": "教師教務系統",
+  "items": [
+    {
+      "id": "dashboard",
+      "label": "主控台",
+      "icon": "dashboard",
+      "children": [
+        { "id": "overview", "label": "個人總覽", "route": "/teacher/overview" },
+        { "id": "tasks", "label": "待辦事項", "route": "/teacher/tasks" },
+        { "id": "academic-calendar", "label": "教務行事曆", "route": "/teacher/academic-calendar" },
+        { "id": "notifications", "label": "通知中心", "route": "/teacher/notifications" }
+      ]
+    },
+    {
+      "id": "teaching",
+      "label": "授課",
+      "icon": "presentation",
+      "children": [
+        { "id": "pre-semester", "label": "開課前", "route": "/teacher/teaching/pre-semester" },
+        { "id": "in-semester", "label": "上課中", "route": "/teacher/teaching/in-semester" },
+        { "id": "teaching-history", "label": "開課記錄", "route": "/teacher/teaching/history" }
+      ]
+    },
+    {
+      "id": "advising",
+      "label": "導師",
+      "icon": "handshake",
+      "route": "/teacher/advising"
+    },
+    {
+      "id": "campus-routines",
+      "label": "校務",
+      "icon": "school",
+      "children": [
+        {
+          "id": "academic-information",
+          "label": "公告",
+          "children": [
+            { "id": "academic-announcements", "label": "教務公告", "route": "/teacher/academic-announcements" },
+            { "id": "academic-regulations", "label": "教務規章", "route": "/teacher/academic-regulations" },
+            { "id": "campus-course-search", "label": "開課查詢", "route": "/teacher/campus-course-search" },
+            { "id": "academic-contacts", "label": "服務資訊", "route": "/teacher/academic-contacts" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "personal-services",
+      "label": "個人設定",
+      "icon": "settings",
+      "children": [
+        { "id": "profile", "label": "基本資料", "route": "/teacher/profile" },
+        { "id": "notification-settings", "label": "通知設定", "route": "/teacher/notification-settings" },
+        { "id": "application-history", "label": "申請紀錄", "route": "/teacher/application-history" },
+        { "id": "helpdesk", "label": "問題回報", "route": "/teacher/helpdesk" },
+        { "id": "account-security", "label": "登入紀錄", "route": "/teacher/account-security" }
+      ]
+    }
+  ]
+}
