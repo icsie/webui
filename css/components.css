@@ -2,7 +2,7 @@
     display: flex;
     min-height: 68px;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 16px;
     padding: 12px 16px;
     color: white;
@@ -11,7 +11,7 @@
 
 .brand { display: inline-flex; align-items: center; gap: 10px; color: white; font-size: 17px; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; color: var(--brand); background: #f4c66d; border-radius: 8px; font-weight: 800; }
-.header-actions { display: flex; align-items: center; gap: 12px; }
+.header-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 .semester { display: none; color: #c9d8e3; font-size: 13px; }
 .icon-button { color: inherit; background: transparent; border: 0; }
 .menu-toggle { order: -1; padding: 8px 4px; color: white; font-size: 21px; }
