@@ -1,7 +1,7 @@
 @media (min-width: 700px) {
     .site-header { padding: 14px 32px; }
     .menu-toggle { display: inline-flex; }
-    .semester, .account-name { display: inline; }
+    .semester { display: inline; }
     .account-button { padding-left: 12px; border-left: 1px solid rgba(255, 255, 255, .25); }
     .sidebar { position: static; z-index: auto; width: max-content; min-width: 220px; padding: 28px 16px; box-shadow: none; transform: none; }
     .sidebar:not(.is-open) { display: none; }

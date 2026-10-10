@@ -1,20 +1,114 @@
 const DATA_PATH = new URL("json/", document.baseURI);
+const API_PATH = new URL("api/", document.baseURI);
+const NAVIGATION_ICONS = ["dashboard", "presentation", "handshake", "school", "settings"];
 const sidebar = document.querySelector("#sidebar");
 const menuToggle = document.querySelector("#menuToggle");
 const sidebarBackdrop = document.querySelector("#sidebarBackdrop");
 const sideNavigation = document.querySelector("#sideNavigation");
 const dashboardCards = document.querySelector("#dashboardCards");
-const accountButton = document.querySelector("#accountButton");
+const loginButton = document.querySelector("#loginButton");
+const accountMenuToggle = document.querySelector("#accountMenuToggle");
+const accountMenu = document.querySelector("#accountMenu");
+const logoutButton = document.querySelector("#logoutButton");
+const accountProfile = document.querySelector("#accountProfile");
+const accountAvatar = document.querySelector("#accountAvatar");
+const accountName = document.querySelector("#accountName");
+const welcomeHeading = document.querySelector("#welcomeHeading");
 
 loadPageData();
+loadAccountProfile();
+
+async function loadAccountProfile() {
+    try {
+        const response = await fetch(new URL("auth/me", API_PATH), { credentials: "same-origin" });
+        if (response.status === 401) {
+            return;
+        }
+        if (!response.ok) {
+            throw new Error(`登入狀態載入失敗：${response.status}`);
+        }
+
+        renderAccountProfile(await response.json());
+    } catch (error) {
+        console.error("無法載入登入資料", error);
+    }
+}
+
+function renderAccountProfile(profile) {
+    const displayName = profile.name || profile.email;
+    if (!displayName) {
+        return;
+    }
+
+    accountName.textContent = displayName;
+    accountAvatar.textContent = Array.from(displayName.trim())[0] || "?";
+    if (profile.picture) {
+        const pictureUrl = new URL(profile.picture);
+        if (pictureUrl.protocol === "https:") {
+            const image = document.createElement("img");
+            image.src = pictureUrl.href;
+            image.alt = "";
+            accountAvatar.replaceChildren(image);
+        }
+    }
+    welcomeHeading.textContent = `早安，${displayName}`;
+    loginButton.hidden = true;
+    accountProfile.hidden = false;
+}
+
+async function logout() {
+    if (!window.confirm("確定要登出嗎？")) {
+        return;
+    }
+
+    logoutButton.disabled = true;
+    try {
+        const response = await fetch(new URL("auth/logout", API_PATH), {
+            method: "POST",
+            credentials: "same-origin"
+        });
+        if (!response.ok) {
+            throw new Error(`登出失敗：${response.status}`);
+        }
+        window.location.reload();
+    } catch (error) {
+        logoutButton.disabled = false;
+        console.error("無法登出", error);
+        window.alert("登出失敗，稍後再試");
+    }
+}
+
+logoutButton.addEventListener("click", logout);
+accountMenuToggle.addEventListener("click", () => {
+    const isExpanded = accountMenuToggle.getAttribute("aria-expanded") === "true";
+    accountMenuToggle.setAttribute("aria-expanded", String(!isExpanded));
+    accountMenu.hidden = isExpanded;
+});
+
+function closeAccountMenu() {
+    accountMenu.hidden = true;
+    accountMenuToggle.setAttribute("aria-expanded", "false");
+}
+
+document.addEventListener("click", (event) => {
+    if (!accountProfile.contains(event.target)) {
+        closeAccountMenu();
+    }
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        closeAccountMenu();
+    }
+});
 
 async function loadPageData() {
-    const navigationRequest = fetch(new URL("teacher_ops.json", DATA_PATH)).then(readJson);
+    const navigationRequest = fetch(new URL("subclass/pcid/4", API_PATH), { credentials: "same-origin" }).then(readJson);
     const dashboardRequest = fetch(new URL("dashboard_cards.json", DATA_PATH)).then(readJson);
 
     try {
         const navigation = await navigationRequest;
-        renderNavigation(navigation.items);
+        renderNavigation(getItems(navigation));
     } catch (error) {
         renderNavigationError(error);
     }
@@ -29,45 +123,79 @@ async function loadPageData() {
 
 function readJson(response) {
     if (!response.ok) {
-        throw new Error(`資料載入失敗：${response.status}`);
+        const error = new Error(`資料載入失敗：${response.status}`);
+        error.status = response.status;
+        throw error;
     }
     return response.json();
+}
+
+function getItems(data) {
+    const items = Array.isArray(data) ? data : data.items;
+    if (!Array.isArray(items)) {
+        throw new Error("API 回應缺少 items 陣列");
+    }
+    return items;
 }
 
 function renderNavigation(items) {
     sideNavigation.replaceChildren();
     items.forEach((item, index) => {
-        sideNavigation.append(createNavigationGroup(item, item.id === "dashboard" || index === 0));
+        sideNavigation.append(createNavigationGroup(item, index));
     });
 }
 
-function createNavigationGroup(item, isActive) {
+function createNavigationGroup(item, index) {
     const group = document.createElement("div");
     group.className = "navigation-group";
 
     const button = document.createElement("button");
     button.className = "navigation-button";
     button.type = "button";
-    button.setAttribute("aria-expanded", String(isActive));
-    if (isActive) {
-        button.classList.add("is-active");
-    }
-    button.innerHTML = `<span class="navigation-icon" aria-hidden="true">${getIcon(item.icon)}</span><span>${item.label}</span><span class="navigation-arrow" aria-hidden="true">⌄</span>`;
+    button.setAttribute("aria-expanded", "false");
+
+    const icon = document.createElement("span");
+    icon.className = "navigation-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = getIcon(item.icon || item.id || NAVIGATION_ICONS[index]);
+    const label = document.createElement("span");
+    label.textContent = item.child_name;
+    const arrow = document.createElement("span");
+    arrow.className = "navigation-arrow";
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.textContent = "⌄";
+    button.append(icon, label, arrow);
     group.append(button);
 
     const children = document.createElement("div");
     children.className = "navigation-children";
-    children.hidden = !isActive;
-    (item.children || []).forEach((child) => children.append(createNavigationItem(child)));
+    children.hidden = true;
     group.append(children);
 
-    button.addEventListener("click", () => {
-        const expanded = button.getAttribute("aria-expanded") === "true";
-        button.setAttribute("aria-expanded", String(!expanded));
-        children.hidden = expanded;
-        if (item.id === "dashboard" && !expanded) {
-            setActiveNavigation(button);
-            showDashboard();
+    button.addEventListener("click", async () => {
+        const isExpanded = button.getAttribute("aria-expanded") === "true";
+        if (isExpanded) {
+            button.setAttribute("aria-expanded", "false");
+            children.hidden = true;
+            return;
+        }
+
+        document.querySelectorAll(".navigation-group").forEach((otherGroup) => {
+            otherGroup.querySelector(".navigation-button").setAttribute("aria-expanded", "false");
+            otherGroup.querySelector(".navigation-children").hidden = true;
+        });
+        button.setAttribute("aria-expanded", "true");
+        children.hidden = false;
+        children.replaceChildren();
+        setActiveNavigation(button);
+
+        try {
+            const response = await fetch(new URL(`subclass/pcid/${encodeURIComponent(item.cid)}`, API_PATH));
+            const result = await readJson(response);
+            getItems(result).forEach((child) => children.append(createNavigationItem(child)));
+        } catch (error) {
+            children.textContent = "目前無法載入項目。";
+            console.error("無法載入子項目", error);
         }
     });
 
@@ -89,7 +217,10 @@ function createNavigationItem(item) {
     const link = document.createElement("a");
     link.className = "navigation-link";
     link.href = item.route || "#";
-    link.textContent = item.label;
+    link.textContent = item.child_name || item.label;
+    if (!item.route) {
+        link.addEventListener("click", (event) => event.preventDefault());
+    }
     link.addEventListener("click", closeSidebar);
     link.addEventListener("click", () => setActiveNavigation(link));
     return link;
@@ -156,12 +287,12 @@ menuToggle.addEventListener("click", () => {
 });
 sidebarBackdrop.addEventListener("click", closeSidebar);
 
-accountButton.addEventListener("click", () => {
-    const expanded = accountButton.getAttribute("aria-expanded") === "true";
-    accountButton.setAttribute("aria-expanded", String(!expanded));
-});
-
 function renderNavigationError(error) {
+    if (error.status === 401) {
+        sideNavigation.textContent = "請先登入，再載入功能選單。";
+        return;
+    }
+
     sideNavigation.textContent = "目前無法載入功能選單。";
     console.error("無法載入教師功能選單", error);
 }

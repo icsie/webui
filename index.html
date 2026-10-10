@@ -19,11 +19,19 @@
             </a>
             <div class="header-actions">
                 <span class="semester">115 學年度第 1 學期</span>
-                <button class="account-button" id="accountButton" type="button" aria-expanded="false">
-                    <span class="avatar">王</span>
-                    <span class="account-name">王老師</span>
-                    <span aria-hidden="true">⌄</span>
-                </button>
+                <a class="account-button" id="loginButton" href="./api/auth/google/login">
+                    <span class="account-name">登入</span>
+                </a>
+                <div class="account-profile" id="accountProfile" hidden>
+                    <button class="avatar-button" id="accountMenuToggle" type="button" aria-label="開啟帳號選單" aria-haspopup="true" aria-expanded="false" aria-controls="accountMenu" title="帳號選單">
+                        <span class="avatar" id="accountAvatar" aria-hidden="true"></span>
+                    </button>
+                    <span class="account-name" id="accountName"></span>
+                    <div class="account-menu" id="accountMenu" hidden>
+                        <a href="./teacher/profile">設定</a>
+                        <button id="logoutButton" type="button">登出</button>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -37,7 +45,7 @@
                 <div class="page-heading">
                     <div>
                         <p class="breadcrumb">主控台 / 個人總覽</p>
-                        <h1>早安，王老師</h1>
+                        <h1 id="welcomeHeading">早安</h1>
                         <p class="page-intro">這裡是您的教學與校務工作摘要。</p>
                     </div>
                     <time class="today" datetime="2026-09-20">2026 年 9 月 20 日</time>
