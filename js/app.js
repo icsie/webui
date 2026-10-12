@@ -15,23 +15,24 @@ const accountAvatar = document.querySelector("#accountAvatar");
 const accountName = document.querySelector("#accountName");
 const welcomeHeading = document.querySelector("#welcomeHeading");
 
-loadPageData();
-loadAccountProfile();
+const accountProfileRequest = loadAccountProfile().catch((error) => {
+    console.error("無法載入登入資料", error);
+    throw error;
+});
+loadPageData(accountProfileRequest);
 
 async function loadAccountProfile() {
-    try {
-        const response = await fetch(new URL("auth/me", API_PATH), { credentials: "same-origin" });
-        if (response.status === 401) {
-            return;
-        }
-        if (!response.ok) {
-            throw new Error(`登入狀態載入失敗：${response.status}`);
-        }
-
-        renderAccountProfile(await response.json());
-    } catch (error) {
-        console.error("無法載入登入資料", error);
+    const response = await fetch(new URL("auth/me", API_PATH), { credentials: "same-origin" });
+    if (response.status === 401) {
+        return null;
     }
+    if (!response.ok) {
+        throw new Error(`登入狀態載入失敗：${response.status}`);
+    }
+
+    const profile = await response.json();
+    renderAccountProfile(profile);
+    return profile;
 }
 
 function renderAccountProfile(profile) {
@@ -102,8 +103,21 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
-async function loadPageData() {
-    const navigationRequest = fetch(new URL("subclass/pcid/4", API_PATH), { credentials: "same-origin" }).then(readJson);
+async function loadPageData(profileRequest) {
+    const navigationRequest = profileRequest.then((profile) => {
+        if (!profile) {
+            const error = new Error("請先登入，再載入功能選單。");
+            error.status = 401;
+            throw error;
+        }
+        if (!Number.isInteger(profile.id) || profile.id <= 0) {
+            throw new Error("登入資料缺少有效會員識別碼");
+        }
+        return fetch(
+            new URL(`subclass/pcid/${encodeURIComponent(profile.id)}`, API_PATH),
+            { credentials: "same-origin" }
+        ).then(readJson);
+    });
     const dashboardRequest = fetch(new URL("dashboard_cards.json", DATA_PATH)).then(readJson);
 
     try {
@@ -159,7 +173,7 @@ function createNavigationGroup(item, index) {
     icon.setAttribute("aria-hidden", "true");
     icon.textContent = getIcon(item.icon || item.id || NAVIGATION_ICONS[index]);
     const label = document.createElement("span");
-    label.textContent = item.child_name;
+    label.textContent = item.name;
     const arrow = document.createElement("span");
     arrow.className = "navigation-arrow";
     arrow.setAttribute("aria-hidden", "true");
@@ -217,7 +231,7 @@ function createNavigationItem(item) {
     const link = document.createElement("a");
     link.className = "navigation-link";
     link.href = item.route || "#";
-    link.textContent = item.child_name || item.label;
+    link.textContent = item.name || item.label;
     if (!item.route) {
         link.addEventListener("click", (event) => event.preventDefault());
     }

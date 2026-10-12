@@ -29,8 +29,8 @@ Replace the remote URL with your repository URL.
 
 The frontend expects these FastAPI routes under the app's deployment prefix (for example, `/s115999999/`):
 
-- `GET api/subclass/pcid/4`: return the first-level navigation as `{ "items": [{ "cid": 1, "child_name": "授課", "icon": "presentation" }] }`.
-- `GET api/subclass/pcid/{cid}`: return that navigation item's children in the same `{ "items": [{ "cid": 2, "child_name": "課程" }] }` format.
+- `GET api/subclass/pcid/4`: return the first-level navigation as `{ "items": [{ "cid": 1, "name": "授課", "icon": "presentation" }] }`.
+- `GET api/subclass/pcid/{cid}`: return that navigation item's children in the same `{ "items": [{ "cid": 2, "name": "課程" }] }` format.
 - `GET api/auth/google/login`: begin Google OAuth and redirect the browser.
 - `GET api/auth/me`: return the signed-in profile as JSON, for example `{ "name": "王老師", "email": "teacher@example.com", "picture": "https://..." }`.
 - `POST api/auth/logout`: clear the server-side session and authentication cookie, and revoke any stored Google OAuth token if the app retains one; return a successful status such as `204 No Content`.
