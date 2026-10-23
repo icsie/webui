@@ -38,18 +38,24 @@
         <div class="workspace">
             <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
             <aside class="sidebar" id="sidebar" aria-label="教務系統導覽">
-                <nav class="side-navigation" id="sideNavigation" aria-label="教師功能導覽"></nav>
+                <section class="sidebar-section" aria-labelledby="rootNavigationHeading">
+                    <h2 class="sidebar-label" id="rootNavigationHeading">導覽</h2>
+                    <nav class="side-navigation" id="rootNavigation" aria-label="導覽"></nav>
+                </section>
+                <section class="sidebar-section" id="teacherNavigationSection" aria-labelledby="sideNavigationHeading" hidden>
+                    <h2 class="sidebar-label" id="sideNavigationHeading">教師功能</h2>
+                    <nav class="side-navigation" id="sideNavigation" aria-label="教師功能導覽"></nav>
+                </section>
             </aside>
 
             <main class="main-content" id="mainContent">
                 <div class="page-heading">
                     <div>
-                        <p class="breadcrumb">主控台 / 個人總覽</p>
-                        <h1 id="welcomeHeading">早安</h1>
-                        <p class="page-intro">這裡是您的教學與校務工作摘要。</p>
+                        <p class="page-intro">WKE校務現況</p>
                     </div>
                     <time class="today" datetime="2026-09-20">2026 年 9 月 20 日</time>
                 </div>
+                <section id="rootDataResults" aria-live="polite" hidden></section>
                 <section class="dashboard-grid" id="dashboardCards" aria-label="個人總覽卡片"></section>
             </main>
         </div>
