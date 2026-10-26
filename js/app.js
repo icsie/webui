@@ -7,6 +7,17 @@ const ROOT_CARD_LABELS = {
     Member: "教職員生數",
     Section: "開課數"
 };
+const ROOT_DATA_COLUMNS = [
+    {
+        key: "academic_year",
+        label: "學(年)期",
+        keys: ["academic_year", "term"],
+        getValue: (record) => formatAcademicTerm(record.academic_year, record.term)
+    },
+    { key: "section_name", label: "課程名稱", keys: ["section_name"], getValue: (record) => record.section_name },
+    { key: "course_code", label: "課號", keys: ["course_code"], getValue: (record) => record.course_code },
+    { key: "student_count", label: "人數", keys: ["student_count"], getValue: (record) => record.student_count }
+];
 const sidebar = document.querySelector("#sidebar");
 const menuToggle = document.querySelector("#menuToggle");
 const sidebarBackdrop = document.querySelector("#sidebarBackdrop");
@@ -258,7 +269,9 @@ function renderRootData(data, title) {
         return;
     }
 
-    const columns = Object.keys(records[0]).slice(0, 4);
+    let sortedRecords = records.slice();
+    let sortKey = null;
+    let sortDirection = 1;
     const table = document.createElement("table");
     table.className = "data-table";
     const caption = document.createElement("caption");
@@ -267,30 +280,91 @@ function renderRootData(data, title) {
 
     const thead = document.createElement("thead");
     const headingRow = document.createElement("tr");
-    columns.forEach((column) => {
+    ROOT_DATA_COLUMNS.forEach((column) => {
         const heading = document.createElement("th");
         heading.scope = "col";
-        heading.textContent = column;
+        const sortButton = document.createElement("button");
+        sortButton.className = "data-table-sort";
+        sortButton.type = "button";
+        sortButton.textContent = column.label;
+        sortButton.addEventListener("click", () => {
+            if (sortKey === column.key) {
+                sortDirection *= -1;
+            } else {
+                sortKey = column.key;
+                sortDirection = 1;
+            }
+            sortedRecords = records.slice().sort((left, right) => {
+                for (const key of column.keys) {
+                    const leftValue = left[key];
+                    const rightValue = right[key];
+                    const leftMissing = leftValue === null || leftValue === undefined;
+                    const rightMissing = rightValue === null || rightValue === undefined;
+                    if (leftMissing || rightMissing) {
+                        if (leftMissing !== rightMissing) {
+                            return leftMissing ? 1 : -1;
+                        }
+                        continue;
+                    }
+                    const comparison = compareDataValues(leftValue, rightValue);
+                    if (comparison !== 0) {
+                        return comparison * sortDirection;
+                    }
+                }
+                return 0;
+            });
+            thead.querySelectorAll("th").forEach((cell) => cell.removeAttribute("aria-sort"));
+            heading.setAttribute("aria-sort", sortDirection === 1 ? "ascending" : "descending");
+            renderRows();
+        });
+        heading.append(sortButton);
         headingRow.append(heading);
     });
     thead.append(headingRow);
     table.append(thead);
 
     const tbody = document.createElement("tbody");
-    records.forEach((record) => {
-        const row = document.createElement("tr");
-        Object.values(record).slice(0, 4).forEach((value) => {
-            const cell = document.createElement("td");
-            cell.textContent = formatCellValue(value);
-            row.append(cell);
+    function renderRows() {
+        tbody.replaceChildren();
+        sortedRecords.forEach((record) => {
+            const row = document.createElement("tr");
+            ROOT_DATA_COLUMNS.forEach((column) => {
+                const cell = document.createElement("td");
+                cell.textContent = formatCellValue(column.getValue(record));
+                row.append(cell);
+            });
+            tbody.append(row);
         });
-        while (row.cells.length < columns.length) {
-            row.append(document.createElement("td"));
-        }
-        tbody.append(row);
-    });
+    }
+    renderRows();
     table.append(tbody);
     rootDataResults.append(table);
+}
+
+function compareDataValues(left, right) {
+    if (left === null || left === undefined) {
+        return right === null || right === undefined ? 0 : 1;
+    }
+    if (right === null || right === undefined) {
+        return -1;
+    }
+    if (typeof left === "number" && typeof right === "number") {
+        return left - right;
+    }
+    return String(left).localeCompare(String(right), undefined, {
+        numeric: true,
+        sensitivity: "base"
+    });
+}
+
+function formatAcademicTerm(academicYear, term) {
+    if (academicYear === null || academicYear === undefined) {
+        return formatCellValue(term);
+    }
+    if (term === null || term === undefined) {
+        return `${formatCellValue(academicYear)}學年度`;
+    }
+    return `${formatCellValue(academicYear)}學年度第${formatCellValue(term)}學期`;
 }
 
 function formatCellValue(value) {
@@ -363,22 +437,28 @@ function createNavigationItem(item) {
         nested.className = "nested-navigation";
         nested.open = true;
         const summary = document.createElement("summary");
-        summary.textContent = item.label;
+        summary.textContent = item.name || item.label;
         nested.append(summary);
         item.children.forEach((child) => nested.append(createNavigationItem(child)));
         return nested;
     }
 
-    const link = document.createElement("a");
-    link.className = "navigation-link";
-    link.href = item.route || "#";
-    link.textContent = item.name || item.label;
-    if (!item.route) {
-        link.addEventListener("click", (event) => event.preventDefault());
-    }
-    link.addEventListener("click", closeSidebar);
-    link.addEventListener("click", () => setActiveNavigation(link));
-    return link;
+    const name = item.name || item.label;
+    const count = Number(item.n);
+    const countLabel = Number.isFinite(count) && count > 0
+        ? ` (${formatCellValue(item.n)})`
+        : "";
+    const button = document.createElement("button");
+    button.className = "navigation-link navigation-data-button";
+    button.type = "button";
+    button.textContent = `${name}${countLabel}`;
+    button.addEventListener("click", () => {
+        loadRootData({ ...item, name }, button);
+        if (window.matchMedia("(max-width: 699px)").matches) {
+            closeSidebar();
+        }
+    });
+    return button;
 }
 
 function renderDashboard(items) {
