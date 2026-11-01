@@ -82,6 +82,9 @@ h1 { margin: 0; color: var(--brand); font-size: clamp(26px, 4vw, 34px); line-hei
 .data-table th[aria-sort="ascending"] .data-table-sort::after { content: "↑"; }
 .data-table th[aria-sort="descending"] .data-table-sort::after { content: "↓"; }
 .data-table-sort:focus-visible { outline: 2px solid var(--brand-light); outline-offset: 3px; }
+.data-table-link { padding: 0; color: var(--brand-light); background: transparent; border: 0; font: inherit; text-decoration: underline; cursor: pointer; }
+.data-table-link:hover { color: var(--brand); }
+.data-table-link:focus-visible { outline: 2px solid var(--brand-light); outline-offset: 3px; }
 .data-table td { white-space: pre-wrap; overflow-wrap: anywhere; }
 .data-table tbody tr:hover { background: var(--surface-soft); }
 .accent-orange { --card-accent: #dd7c32; }

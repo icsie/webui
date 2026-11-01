@@ -7,17 +7,52 @@ const ROOT_CARD_LABELS = {
     Member: "教職員生數",
     Section: "開課數"
 };
-const ROOT_DATA_COLUMNS = [
+const COURSE_DATA_COLUMNS = [
     {
         key: "academic_year",
         label: "學(年)期",
-        keys: ["academic_year", "term"],
+        getSortValues: (record) => [record.academic_year, record.term],
         getValue: (record) => formatAcademicTerm(record.academic_year, record.term)
     },
-    { key: "section_name", label: "課程名稱", keys: ["section_name"], getValue: (record) => record.section_name },
-    { key: "course_code", label: "課號", keys: ["course_code"], getValue: (record) => record.course_code },
-    { key: "student_count", label: "人數", keys: ["student_count"], getValue: (record) => record.student_count }
+    {
+        key: "section_name",
+        label: "課程名稱",
+        getSortValues: (record) => [record.section_name],
+        getValue: (record) => record.section_name
+    },
+    {
+        key: "course_code",
+        label: "課號",
+        getSortValues: (record) => [record.course_code],
+        getValue: (record) => record.course_code
+    },
+    {
+        key: "student_count",
+        label: "人數",
+        getSortValues: (record) => [record.student_count],
+        getValue: (record) => record.student_count
+    }
 ];
+const ENTITY_DATA_COLUMN_LABELS = {
+    dept_code: "系所代碼",
+    dept_name: "系所名稱"
+};
+const STUDENT_DATA_COLUMN_LABELS = {
+    student_id: "學號",
+    student_no: "學號",
+    student_number: "學號",
+    student_name: "姓名",
+    name: "姓名",
+    gender: "性別",
+    sex: "性別",
+    dept_code: "系所代碼",
+    dept_name: "系所名稱",
+    department: "系所",
+    grade: "年級",
+    class_name: "班級",
+    email: "電子郵件",
+    phone: "電話"
+};
 const sidebar = document.querySelector("#sidebar");
 const menuToggle = document.querySelector("#menuToggle");
 const sidebarBackdrop = document.querySelector("#sidebarBackdrop");
@@ -206,10 +241,12 @@ function renderRootNavigation(items) {
     });
 }
 
-async function loadRootData(item, button) {
+async function loadRootData(item, button, endpoint, dataTitle, useDynamicColumns = false) {
     const requestId = ++rootDataRequestId;
     const breadcrumb = document.querySelector(".breadcrumb");
     const pageIntro = document.querySelector(".page-intro");
+    const requestPath = endpoint || `root/co/${encodeURIComponent(item.cid)}`;
+    const title = dataTitle || item.name;
     if (button) {
         setActiveNavigation(button);
     }
@@ -229,7 +266,7 @@ async function loadRootData(item, button) {
 
     try {
         const response = await fetch(
-            new URL(`root/co/${encodeURIComponent(item.cid)}`, API_PATH),
+            new URL(requestPath, API_PATH),
             { credentials: "same-origin" }
         );
         const data = await readJson(response);
@@ -239,7 +276,7 @@ async function loadRootData(item, button) {
         if (pageIntro) {
             pageIntro.textContent = "";
         }
-        renderRootData(data, item.name);
+        renderRootData(data, title, useDynamicColumns);
     } catch (error) {
         if (requestId !== rootDataRequestId) {
             return;
@@ -253,7 +290,7 @@ async function loadRootData(item, button) {
     }
 }
 
-function renderRootData(data, title) {
+function renderRootData(data, title, useDynamicColumns = false) {
     const records = Array.isArray(data) ? data : data.items;
     if (!Array.isArray(records)) {
         throw new Error("API 回應缺少資料陣列");
@@ -269,18 +306,19 @@ function renderRootData(data, title) {
         return;
     }
 
+    const columns = getRootDataColumns(records, useDynamicColumns);
     let sortedRecords = records.slice();
     let sortKey = null;
     let sortDirection = 1;
     const table = document.createElement("table");
     table.className = "data-table";
     const caption = document.createElement("caption");
-    caption.textContent = `${title}資料`;
+    caption.textContent = useDynamicColumns ? title : `${title}資料`;
     table.append(caption);
 
     const thead = document.createElement("thead");
     const headingRow = document.createElement("tr");
-    ROOT_DATA_COLUMNS.forEach((column) => {
+    columns.forEach((column) => {
         const heading = document.createElement("th");
         heading.scope = "col";
         const sortButton = document.createElement("button");
@@ -295,9 +333,11 @@ function renderRootData(data, title) {
                 sortDirection = 1;
             }
             sortedRecords = records.slice().sort((left, right) => {
-                for (const key of column.keys) {
-                    const leftValue = left[key];
-                    const rightValue = right[key];
+                const leftValues = column.getSortValues(left);
+                const rightValues = column.getSortValues(right);
+                for (let index = 0; index < Math.max(leftValues.length, rightValues.length); index += 1) {
+                    const leftValue = leftValues[index];
+                    const rightValue = rightValues[index];
                     const leftMissing = leftValue === null || leftValue === undefined;
                     const rightMissing = rightValue === null || rightValue === undefined;
                     if (leftMissing || rightMissing) {
@@ -328,9 +368,29 @@ function renderRootData(data, title) {
         tbody.replaceChildren();
         sortedRecords.forEach((record) => {
             const row = document.createElement("tr");
-            ROOT_DATA_COLUMNS.forEach((column) => {
+            columns.forEach((column) => {
                 const cell = document.createElement("td");
-                cell.textContent = formatCellValue(column.getValue(record));
+                const value = column.getValue(record);
+                if (column.key === "student_count" && hasNextCid(record)) {
+                    const link = document.createElement("button");
+                    link.className = "data-table-link";
+                    link.type = "button";
+                    link.textContent = formatCellValue(value);
+                    link.setAttribute("aria-label", `查看${formatStudentListTitle(record)}`);
+                    link.addEventListener("click", () => {
+                        const title = formatStudentListTitle(record);
+                        loadRootData(
+                            { ...record, name: title },
+                            link,
+                            `root/co/${encodeURIComponent(record.nextcid)}`,
+                            title,
+                            true
+                        );
+                    });
+                    cell.append(link);
+                } else {
+                    cell.textContent = formatCellValue(value);
+                }
                 row.append(cell);
             });
             tbody.append(row);
@@ -339,6 +399,67 @@ function renderRootData(data, title) {
     renderRows();
     table.append(tbody);
     rootDataResults.append(table);
+}
+
+function getRootDataColumns(records, useDynamicColumns = false) {
+    if (useDynamicColumns) {
+        const detailRecord = records.find((record) => (
+            record.entity_data
+            && typeof record.entity_data === "object"
+            && !Array.isArray(record.entity_data)
+        ));
+        const values = detailRecord ? detailRecord.entity_data : records[0];
+        const excludedKeys = new Set(["oid", "fullname", "full_name", "nextcid"]);
+        return Object.keys(values)
+            .filter((key) => !excludedKeys.has(key.toLowerCase()))
+            .map((key) => ({
+                key,
+                label: STUDENT_DATA_COLUMN_LABELS[key.toLowerCase()] || key,
+                getValue: (record) => {
+                    const source = record.entity_data && typeof record.entity_data === "object"
+                        ? record.entity_data
+                        : record;
+                    return source[key];
+                },
+                getSortValues: (record) => {
+                    const source = record.entity_data && typeof record.entity_data === "object"
+                        ? record.entity_data
+                        : record;
+                    return [source[key]];
+                }
+            }));
+    }
+
+    const detailRecord = records.find((record) => (
+        record.entity_data
+        && typeof record.entity_data === "object"
+        && !Array.isArray(record.entity_data)
+    ));
+    if (!detailRecord) {
+        return COURSE_DATA_COLUMNS;
+    }
+
+    return Object.keys(detailRecord.entity_data)
+        .filter((key) => key !== "oid")
+        .map((key) => ({
+            key,
+            label: ENTITY_DATA_COLUMN_LABELS[key] || key,
+            getValue: (record) => record.entity_data && record.entity_data[key],
+            getSortValues: (record) => [record.entity_data && record.entity_data[key]]
+        }));
+}
+
+function hasNextCid(record) {
+    return record.nextcid !== null
+        && record.nextcid !== undefined
+        && String(record.nextcid).length > 0;
+}
+
+function formatStudentListTitle(record) {
+    const sectionName = record.section_name || record.title || "課程";
+    const sectionClass = record.class_name || record.section_class || record.class;
+    const classLabel = sectionClass ? `－${formatCellValue(sectionClass)}` : "";
+    return `${formatCellValue(sectionName)}${classLabel} ${formatCellValue(record.student_count)} 位修課學生`;
 }
 
 function compareDataValues(left, right) {
