@@ -1,46 +1,59 @@
-const ENTITY_DATA_COLUMN_LABELS = {
-    dept_code: "系所代碼",
-    dept_name: "系所名稱"
-};
-const STUDENT_DATA_COLUMN_LABELS = {
-    student_id: "學號",
-    student_no: "學號",
-    student_number: "學號",
-    student_name: "姓名",
-    name: "姓名",
-    academic_year: "學年度",
-    term: "學期",
-    section_name: "課程名稱",
-    course_code: "課號",
-    student_count: "人數",
-    completed_count: "完成數",
-    admission_year: "入學年度",
-    student_status: "學籍狀態",
-    section_oid: "開課識別碼",
-    credits: "學分",
-    final_grade: "成績",
-    gender: "性別",
-    sex: "性別",
-    dept_code: "系所代碼",
-    dept_name: "系所名稱",
-    department: "系所",
-    grade: "年級",
-    class_name: "班級",
-    email: "電子郵件",
-    phone: "電話"
-};
+// Entity indices: 2 = faculty, 4 = student, 8 = section.
+const ENTITY_LABELS = [
+    {}, // 0
+    {}, // 1
+    { // 2: faculty-section
+        section_name: "課程名稱",
+        course_code: "課號",
+        faculties: "授課老師",
+        offer_dept: "開課系所",
+        student_count: "人數"
+    },
+    {}, // 3
+    { // 4: student-section
+        academic_year: "學年度",
+        term: "學期",
+        section_name: "課程名稱",
+        course_code: "課號",
+        credits: "學分",
+        final_grade: "成績",
+    },
+    {}, // 5
+    {}, // 6
+    {}, // 7
+    { // 8: section-students
+        student_no: "學號",
+        name: "姓名",
+        departments: "系所",
+        admission_year: "入學年度",
+        completed_course_credits: "學分數",
+        completed_count: "完成數",
+        dropped_count: "停修數"        
+    }
+];
 
-export function getRootDataColumns(records) {
+export function getRootDataColumns(records, eid) {
     const keys = new Set();
     records.forEach((record) => collectRecordColumnKeys(record, "", keys));
-    return Array.from(keys, (key) => ({
-        key,
-        label: ENTITY_DATA_COLUMN_LABELS[key] || STUDENT_DATA_COLUMN_LABELS[key.toLowerCase()]
-            || STUDENT_DATA_COLUMN_LABELS[key.split(".").pop().toLowerCase()]
-            || key,
-        getValue: (record) => getRecordValue(record, key),
-        getSortValues: (record) => [getRecordValue(record, key)]
-    }));
+    const entityId = records[0]?.eid ?? records[0]?.item?.eid ?? eid;
+    const labels = ENTITY_LABELS[entityId];
+    const hasLabels = labels && Object.keys(labels).length > 0;
+    // Configured entities use only their own fields, in the configured order.
+    // Other entities retain the existing API-field table.
+    const columnKeys = hasLabels ? Object.keys(labels) : Array.from(keys);
+    const columns = columnKeys.map((key) => {
+        const recordKey = keys.has(key) ? key : Array.from(keys).find((candidate) => (
+            candidate.split(".").pop() === key
+        )) || key;
+        return {
+            key,
+            label: hasLabels ? labels[key] : key,
+            getValue: (record) => getRecordValue(record, recordKey),
+            getSortValues: (record) => [getRecordValue(record, recordKey)]
+        };
+    });
+    console.log("getRootDataColumns", { eid: entityId, columns });
+    return columns;
 }
 
 export function collectRecordColumnKeys(record, prefix, keys) {

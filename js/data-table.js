@@ -1,6 +1,6 @@
 import { getRootDataColumns, sortAcademicHistory, compareDataValues, getRecordValue, hasCid, formatCellValue, formatStudentListTitle } from "./records.js";
 
-export function renderRootData(rootDataResults, data, title, onDrillDown) {
+export function renderRootData(rootDataResults, data, title, onDrillDown, eid) {
     const records = Array.isArray(data) ? data : data.items;
     if (!Array.isArray(records)) {
         throw new Error("API 回應缺少資料陣列");
@@ -16,9 +16,14 @@ export function renderRootData(rootDataResults, data, title, onDrillDown) {
         return;
     }
 
-    const columns = getRootDataColumns(records);
-    let sortKey = columns.some((column) => column.key === "sem.academic_year")
-        ? "sem.academic_year"
+    const entityId = records[0].eid ?? records[0].item?.eid
+        ?? (!Array.isArray(data) ? data.eid : undefined) ?? eid;
+    const columns = getRootDataColumns(records, entityId);
+    const academicYearColumn = columns.find((column) => (
+        column.key === "sem.academic_year" || column.key === "academic_year"
+    ));
+    let sortKey = academicYearColumn && records.some((record) => getRecordValue(record, "sem.academic_year") !== undefined)
+        ? academicYearColumn.key
         : null;
     let sortedRecords = sortKey ? sortAcademicHistory(records) : records.slice();
     let sortDirection = sortKey ? -1 : 1;

@@ -35,7 +35,7 @@ export function initDataView({ onDrillDown }) {
             if (pageIntro) {
                 pageIntro.textContent = "";
             }
-            renderRootData(rootDataResults, data, title, onDrillDown);
+            renderRootData(rootDataResults, data, title, onDrillDown, item.eid);
         } catch (error) {
             if (requestId !== rootDataRequestId) {
                 return;
